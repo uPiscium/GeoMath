@@ -10,16 +10,16 @@
 
 namespace GeoMath {
 class MathException : std::exception {
-private:
-  std::string mMessage;
+  private:
+    std::string mMessage;
 
-public:
-  MathException(const std::string &msg) { mMessage = msg; }
-  const char *what() const { return mMessage.c_str(); }
+  public:
+    MathException(const std::string &msg) { mMessage = msg; }
+    const char *what() const { return mMessage.c_str(); }
 };
 
 struct IndexOutOfRange : MathException {
-public:
-  IndexOutOfRange(const std::string &msg) : MathException(msg) { ; }
+  public:
+    IndexOutOfRange(const std::string &msg) : MathException(msg) { ; }
 };
 } // namespace GeoMath
