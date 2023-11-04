@@ -42,19 +42,45 @@ template <typename T> class Quaternion {
         return *this;
     }
 
+    /*
+     * Get the real part of the quaternion
+     * @return The real part of the quaternion
+     */
     const T &GetReal() const { return mReal; }
+    /*
+     * Get the imaginary part of the quaternion
+     * @return The imaginary part of the quaternion
+     */
     const vec3<T> &GetImaginary() const { return mImaginary; }
 
+    /*
+     * Get the length of the quaternion
+     * @return The length of the quaternion
+     */
     T GetLength() const { return sqrt(mReal * mReal + mImaginary.GetLength()); }
+    /*
+     * Get the conjugate of the quaternion
+     * @return The conjugate of the quaternion
+     */
     Quaternion<T> GetConjugate() const {
         return Quaternion<T>(mReal, -mImaginary);
     }
+    /*
+     * Get the normalized quaternion
+     * @return The normalized quaternion
+     */
     Quaternion<T> GetNormalized() const {
         T length = this->GetLength();
         return Quaternion<T>(mReal / length, mImaginary / length);
     }
 
+    /*
+     * Conjugate the quaternion
+     */
     void Conjugate() { mImaginary = -mImaginary; }
+    /*
+     * Normalize the quaternion
+     */
     void Normalize() {
         T length = this->GetLength();
         mReal /= length;
