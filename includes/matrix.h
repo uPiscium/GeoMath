@@ -1,6 +1,4 @@
 #pragma once
-#include <cstring>
-#include <initializer_list>
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -9,25 +7,35 @@
 #include "vector.h"
 
 namespace GeoMath {
+namespace Matrix {
 template <typename T, size_t Row, size_t Column> class MatrixBase {
   protected:
     size_t mSize = Row * Column;
     T *mArray = nullptr;
-    VectorBase<T, Column> *mRows = nullptr;
+    Vector::VectorBase<T, Column> *mRows = nullptr;
 
   private:
+    /*
+     * Allocate memory for the matrix.
+     */
     void Allocate() {
         mArray = new T[mSize];
         for (int i = 0; i < mSize; i++) {
             mArray[i] = static_cast<T>(0);
         }
 
-        mRows = new VectorBase<T, Column>[Row];
+        mRows = new Vector::VectorBase<T, Column>[Row];
         for (int i = 0; i < Row; i++) {
-            mRows[i] = VectorBase<T, Column>(&mArray[i * Column]);
+            mRows[i].SetPointer(&mArray[i * Column]);
         }
     }
+    /*
+     * Free memory of the matrix.
+     */
     void Free() { delete[] mArray; }
+    /*
+     * Flatten the data into the matrix.
+     */
     void Flatten(const std::vector<std::vector<T>> &data) {
         for (int i = 0; i < (Row < data.size() ? Row : data.size()); i++) {
             T *ptr = &mArray[i * Column];
@@ -48,30 +56,32 @@ template <typename T, size_t Row, size_t Column> class MatrixBase {
         std::memcpy(mArray, &data[0],
                     sizeof(T) * (mSize < data.size() ? mSize : data.size()));
     }
-    MatrixBase(const std::vector<VectorBase<T, Column>> &data) {
+    MatrixBase(const std::vector<Vector::VectorBase<T, Column>> &data) {
         this->Allocate();
         for (int i = 0; i < (Row < data.size() ? Row : data.size()); i++) {
-            mRows[i] = data[i];
+            std::memcpy(&mArray[i * Column], (const T *)data[i],
+                        sizeof(T) * (Column < data[i].GetSize()
+                                         ? Column
+                                         : data[i].GetSize()));
         }
     };
     MatrixBase(const T *data, const size_t &comps) {
         this->Allocate();
-        std::memcpy(mArray, &data[0],
-                    sizeof(T) * (mSize < comps ? mSize : comps));
+        std::memcpy(mArray, data, sizeof(T) * (mSize < comps ? mSize : comps));
     }
     MatrixBase(const MatrixBase &data) {
         this->Allocate();
-        std::memcpy(mArray, &data[0], sizeof(T) * mSize);
+        std::memcpy(mArray, (const T *)data, sizeof(T) * mSize);
     }
     ~MatrixBase() { this->Free(); }
 
-    VectorBase<T, Row> &operator[](const size_t &idx) {
+    Vector::VectorBase<T, Column> &operator[](const size_t &idx) {
         if (idx < 0 || Row - 1 < idx) {
             _MATH_THROW(IndexOutOfRange("Index is out of range."));
         }
         return mRows[idx];
     }
-    const VectorBase<T, Row> &operator[](const size_t &idx) const {
+    const Vector::VectorBase<T, Column> &operator[](const size_t &idx) const {
         if (idx < 0 || Row - 1 < idx) {
             _MATH_THROW(IndexOutOfRange("Index is out of range."));
         }
@@ -143,10 +153,21 @@ template <typename T, size_t Row, size_t Column> class MatrixBase {
     operator T *() { return mArray; }
     operator const T *() const { return mArray; }
 
+    /*
+     * Get the size of the matrix.
+     */
     const size_t &GetSize() const { return mSize; }
+    /*
+     * Get the copy of the matrix.
+     * @return MatrixBase<T, Row, Column>
+     */
     MatrixBase GetCopy() const {
         return MatrixBase<T, Row, Column>((const T *)mArray, mSize);
     }
+    /*
+     * Get the transposed matrix.
+     * @return MatrixBase<T, Column, Row>
+     */
     MatrixBase<T, Column, Row> GetTransposed() const {
         MatrixBase<T, Column, Row> transposed;
         for (int i = 0; i < Row; i++) {
@@ -156,6 +177,10 @@ template <typename T, size_t Row, size_t Column> class MatrixBase {
         }
         return transposed;
     }
+    /*
+     * Get the cofactor matrix.
+     * @return MatrixBase<T, Row - 1, Column - 1>
+     */
     MatrixBase<T, Row - 1, Column - 1> GetCofactor(const size_t &i,
                                                    const size_t &j) const {
         MatrixBase<T, Row - 1, Column - 1> result;
@@ -175,25 +200,14 @@ template <typename T, size_t Row, size_t Column> class MatrixBase {
         }
         return result;
     }
-    // T GetDeterminant() const;
 };
+} // namespace Matrix
 
 template <typename T, size_t Row, size_t Column>
-std::ostream &operator<<(std::ostream &stream,
-                         const MatrixBase<T, Row, Column> &mat) {
-    stream << "( ";
-    for (int i = 0; i < Row - 1; i++) {
-        stream << mat[i] << std::endl;
-        stream << "  ";
-    }
-    stream << mat[Row - 1] << " )";
-    return stream;
-}
-
-template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator+(const MatrixBase<T, Row, Column> &m1,
-                                     const MatrixBase<T, Row, Column> &m2) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator+(const Matrix::MatrixBase<T, Row, Column> &m1,
+          const Matrix::MatrixBase<T, Row, Column> &m2) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = m1[i][j] + m2[i][j];
@@ -202,9 +216,10 @@ MatrixBase<T, Row, Column> operator+(const MatrixBase<T, Row, Column> &m1,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator-(const MatrixBase<T, Row, Column> &m1,
-                                     const MatrixBase<T, Row, Column> &m2) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator-(const Matrix::MatrixBase<T, Row, Column> &m1,
+          const Matrix::MatrixBase<T, Row, Column> &m2) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = m1[i][j] - m2[i][j];
@@ -213,9 +228,10 @@ MatrixBase<T, Row, Column> operator-(const MatrixBase<T, Row, Column> &m1,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator*(const MatrixBase<T, Row, Column> &m1,
-                                     const MatrixBase<T, Row, Column> &m2) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator*(const Matrix::MatrixBase<T, Row, Column> &m1,
+          const Matrix::MatrixBase<T, Row, Column> &m2) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = m1[i][j] * m2[i][j];
@@ -224,9 +240,10 @@ MatrixBase<T, Row, Column> operator*(const MatrixBase<T, Row, Column> &m1,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator/(const MatrixBase<T, Row, Column> &m1,
-                                     const MatrixBase<T, Row, Column> &m2) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator/(const Matrix::MatrixBase<T, Row, Column> &m1,
+          const Matrix::MatrixBase<T, Row, Column> &m2) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = m1[i][j] / m2[i][j];
@@ -236,9 +253,9 @@ MatrixBase<T, Row, Column> operator/(const MatrixBase<T, Row, Column> &m1,
 }
 
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator+(const MatrixBase<T, Row, Column> &mat,
-                                     const T &num) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator+(const Matrix::MatrixBase<T, Row, Column> &mat, const T &num) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = mat[i][j] + num;
@@ -247,9 +264,9 @@ MatrixBase<T, Row, Column> operator+(const MatrixBase<T, Row, Column> &mat,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator-(const MatrixBase<T, Row, Column> &mat,
-                                     const T &num) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator-(const Matrix::MatrixBase<T, Row, Column> &mat, const T &num) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = mat[i][j] - num;
@@ -258,9 +275,9 @@ MatrixBase<T, Row, Column> operator-(const MatrixBase<T, Row, Column> &mat,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator*(const MatrixBase<T, Row, Column> &mat,
-                                     const T &num) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator*(const Matrix::MatrixBase<T, Row, Column> &mat, const T &num) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = mat[i][j] * num;
@@ -269,9 +286,9 @@ MatrixBase<T, Row, Column> operator*(const MatrixBase<T, Row, Column> &mat,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator/(const MatrixBase<T, Row, Column> &mat,
-                                     const T &num) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator/(const Matrix::MatrixBase<T, Row, Column> &mat, const T &num) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = mat[i][j] / num;
@@ -281,9 +298,9 @@ MatrixBase<T, Row, Column> operator/(const MatrixBase<T, Row, Column> &mat,
 }
 
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator+(const T &num,
-                                     const MatrixBase<T, Row, Column> &mat) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator+(const T &num, const Matrix::MatrixBase<T, Row, Column> &mat) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = num + mat[i][j];
@@ -292,9 +309,9 @@ MatrixBase<T, Row, Column> operator+(const T &num,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator-(const T &num,
-                                     const MatrixBase<T, Row, Column> &mat) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator-(const T &num, const Matrix::MatrixBase<T, Row, Column> &mat) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = num - mat[i][j];
@@ -303,9 +320,9 @@ MatrixBase<T, Row, Column> operator-(const T &num,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator*(const T &num,
-                                     const MatrixBase<T, Row, Column> &mat) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator*(const T &num, const Matrix::MatrixBase<T, Row, Column> &mat) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = num * mat[i][j];
@@ -314,9 +331,9 @@ MatrixBase<T, Row, Column> operator*(const T &num,
     return result;
 }
 template <typename T, size_t Row, size_t Column>
-MatrixBase<T, Row, Column> operator/(const T &num,
-                                     const MatrixBase<T, Row, Column> &mat) {
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+operator/(const T &num, const Matrix::MatrixBase<T, Row, Column> &mat) {
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
             result[i][j] = num / mat[i][j];
@@ -325,50 +342,76 @@ MatrixBase<T, Row, Column> operator/(const T &num,
     return result;
 }
 
+/*
+ * Get the dot product of two matrices.
+ * @param m1 : Matrix 1.
+ * @param m2 : Matrix 2.
+ * @return MatrixBase<T, Row, Column>
+ */
 template <typename T, size_t Row, size_t Share, size_t Column>
-MatrixBase<T, Row, Column> dot(const MatrixBase<T, Row, Share> &m1,
-                               const MatrixBase<T, Share, Column> &m2) {
-    MatrixBase<T, Column, Row> tm2 = m2.GetTransposed();
-    MatrixBase<T, Row, Column> result;
+Matrix::MatrixBase<T, Row, Column>
+dot(const Matrix::MatrixBase<T, Row, Share> &m1,
+    const Matrix::MatrixBase<T, Share, Column> &m2) {
+    Matrix::MatrixBase<T, Column, Share> tm2 = m2.GetTransposed();
+    Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
-            result[i][j] = dot(m1[i], tm2[i]);
+            result[i][j] = dot(m1[i], tm2[j]);
         }
     }
     return result;
 }
+/*
+ * Get the dot product of a matrix and a vector.
+ * @param mat : Matrix.
+ * @param vec : Vector.
+ * @return VectorBase<T, Row>
+ */
 template <typename T, size_t Row, size_t Column>
-VectorBase<T, Row> dot(const MatrixBase<T, Row, Column> &mat,
-                       const VectorBase<T, Column> &vec) {
-    VectorBase<T, Row> result;
+Vector::VectorBase<T, Row> dot(const Matrix::MatrixBase<T, Row, Column> &mat,
+                               const Vector::VectorBase<T, Column> &vec) {
+    Vector::VectorBase<T, Row> result;
     for (int i = 0; i < Row; i++) {
         result[i] = dot(mat[i], vec);
     }
     return result;
 }
+/*
+ * Get the dot product of a vector and a matrix.
+ * @param vec : Vector.
+ * @param mat : Matrix.
+ * @return VectorBase<T, Column>
+ */
 template <typename T, size_t Row, size_t Column>
-VectorBase<T, Column> dot(const VectorBase<T, Row> &vec,
-                          const MatrixBase<T, Row, Column> &mat) {
-    VectorBase<T, Column> result;
+Vector::VectorBase<T, Column>
+dot(const Vector::VectorBase<T, Row> &vec,
+    const Matrix::MatrixBase<T, Row, Column> &mat) {
+    Vector::VectorBase<T, Column> result;
     for (int i = 0; i < Row; i++) {
         result[i] = dot(vec, mat[i]);
     }
     return result;
 }
 
+/*
+ * Get the determinant of a matrix.
+ * @param mat : Matrix.
+ * @return T
+ */
 template <typename T, size_t Size>
-T determinant(const MatrixBase<T, Size, Size> &mat) {
+T determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
     T det = 0;
     for (int i = 0; i < Size; i++) {
-        MatrixBase<T, Size - 1, Size - 1> &cofactor = mat.GetCofactor(i, 0);
+        Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
+            mat.GetCofactor(i, 0);
         det += mat[i][0] * determinant(cofactor);
     }
     return det;
 }
-template <typename T> T determinant(const MatrixBase<T, 2, 2> &mat) {
+template <typename T> T determinant(const Matrix::MatrixBase<T, 2, 2> &mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
-template <typename T> T determinant(const MatrixBase<T, 3, 3> &mat) {
+template <typename T> T determinant(const Matrix::MatrixBase<T, 3, 3> &mat) {
     T l1 = mat[0][0] * mat[1][1] * mat[2][2];
     T l2 = mat[0][1] * mat[1][2] * mat[2][0];
     T l3 = mat[0][2] * mat[1][0] * mat[2][1];
@@ -390,118 +433,159 @@ template <typename T> class mat4x2;
 template <typename T> class mat4x3;
 template <typename T> class mat4;
 
-template <typename T> class mat2 : public MatrixBase<T, 2, 2> {
+template <typename T> class mat2 : public Matrix::MatrixBase<T, 2, 2> {
   public:
-    mat2() : MatrixBase<T, 2, 2>() {}
-    mat2(const T *array) : MatrixBase<T, 2, 2>(array, this->GetSize()) {}
-    mat2(const MatrixBase<T, 2, 2> &mat) : MatrixBase<T, 2, 2>(mat) {}
-    mat2(const mat2 &mat) : MatrixBase<T, 2, 2>(mat) {}
-    mat2(const vec2<T> &v1, const vec2<T> &v2)
-        : MatrixBase<T, 2, 2>({v1, v2}) {}
-    mat2(const T &a, const T &b, const T &c, const T &d)
-        : MatrixBase<T, 2, 2>({a, b, c, d}) {}
+    mat2() : Matrix::MatrixBase<T, 2, 2>() {}
+    explicit mat2(const T *array)
+        : Matrix::MatrixBase<T, 2, 2>(array, this->GetSize()) {}
+    mat2(const mat2 &mat)
+        : Matrix::MatrixBase<T, 2, 2>((const T *)mat, this->GetSize()) {}
+    explicit mat2(const vec2<T> &v1, const vec2<T> &v2)
+        : Matrix::MatrixBase<T, 2, 2>({v1, v2}) {}
+    explicit mat2(const T &a, const T &b, const T &c, const T &d)
+        : Matrix::MatrixBase<T, 2, 2>({a, b, c, d}) {}
+    explicit mat2(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 2, 2>(mat) {}
 };
-template <typename T> class mat2x3 : public MatrixBase<T, 2, 3> {
+template <typename T> class mat2x3 : public Matrix::MatrixBase<T, 2, 3> {
   public:
-    mat2x3() : MatrixBase<T, 2, 3>() {}
-    mat2x3(const T *array) : MatrixBase<T, 2, 3>(array, this->GetSize()) {}
-    mat2x3(const MatrixBase<T, 2, 3> &mat) : MatrixBase<T, 2, 3>(mat) {}
-    mat2x3(const mat2x3 &mat) : MatrixBase<T, 2, 3>(mat) {}
-    mat2x3(const vec3<T> &v1, const vec3<T> &v2)
-        : MatrixBase<T, 2, 3>({v1, v2}) {}
-    mat2x3(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f)
-        : MatrixBase<T, 2, 3>({a, b, c, d, e, f}) {}
+    mat2x3() : Matrix::MatrixBase<T, 2, 3>() {}
+    explicit mat2x3(const T *array)
+        : Matrix::MatrixBase<T, 2, 3>(array, this->GetSize()) {}
+    mat2x3(const mat2x3 &mat)
+        : Matrix::MatrixBase<T, 2, 3>((const T *)mat, this->GetSize()) {}
+    explicit mat2x3(const vec3<T> &v1, const vec3<T> &v2)
+        : Matrix::MatrixBase<T, 2, 3>({v1, v2}) {}
+    explicit mat2x3(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f)
+        : Matrix::MatrixBase<T, 2, 3>({a, b, c, d, e, f}) {}
+    explicit mat2x3(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 2, 3>(mat) {}
 };
-template <typename T> class mat2x4 : public MatrixBase<T, 2, 4> {
+template <typename T> class mat2x4 : public Matrix::MatrixBase<T, 2, 4> {
   public:
-    mat2x4() : MatrixBase<T, 2, 4>() {}
-    mat2x4(const T *array) : MatrixBase<T, 2, 4>(array, this->GetSize()) {}
-    mat2x4(const MatrixBase<T, 2, 4> &mat) : MatrixBase<T, 2, 4>(mat) {}
-    mat2x4(const mat2x4 &mat) : MatrixBase<T, 2, 4>(mat) {}
-    mat2x4(const vec4<T> &v1, const vec4<T> &v2)
-        : MatrixBase<T, 2, 4>({v1, v2}) {}
-    mat2x4(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f, const T &g, const T &h)
-        : MatrixBase<T, 2, 4>({a, b, c, d, e, f, g, h}) {}
+    mat2x4() : Matrix::MatrixBase<T, 2, 4>() {}
+    explicit mat2x4(const T *array)
+        : Matrix::MatrixBase<T, 2, 4>(array, this->GetSize()) {}
+    mat2x4(const mat2x4 &mat)
+        : Matrix::MatrixBase<T, 2, 4>((const T *)mat, this->GetSize()) {}
+    explicit mat2x4(const vec4<T> &v1, const vec4<T> &v2)
+        : Matrix::MatrixBase<T, 2, 4>({v1, v2}) {}
+    explicit mat2x4(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f, const T &g, const T &h)
+        : Matrix::MatrixBase<T, 2, 4>({a, b, c, d, e, f, g, h}) {}
+    explicit mat2x4(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 2, 4>(mat) {}
 };
-template <typename T> class mat3x2 : public MatrixBase<T, 3, 2> {
+template <typename T> class mat3x2 : public Matrix::MatrixBase<T, 3, 2> {
   public:
-    mat3x2() : MatrixBase<T, 3, 2>() {}
-    mat3x2(const T *array) : MatrixBase<T, 3, 2>(array, this->GetSize()) {}
-    mat3x2(const MatrixBase<T, 3, 2> &mat) : MatrixBase<T, 3, 2>(mat) {}
-    mat3x2(const mat3x2 &mat) : MatrixBase<T, 3, 2>(mat) {}
-    mat3x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3)
-        : MatrixBase<T, 3, 2>({v1, v2, v3}) {}
-    mat3x2(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f)
-        : MatrixBase<T, 3, 2>({a, b, c, d, e, f}) {}
+    mat3x2() : Matrix::MatrixBase<T, 3, 2>() {}
+    explicit mat3x2(const T *array)
+        : Matrix::MatrixBase<T, 3, 2>(array, this->GetSize()) {}
+    mat3x2(const mat3x2 &mat)
+        : Matrix::MatrixBase<T, 3, 2>((const T *)mat, this->GetSize()) {}
+    explicit mat3x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3)
+        : Matrix::MatrixBase<T, 3, 2>({v1, v2, v3}) {}
+    explicit mat3x2(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f)
+        : Matrix::MatrixBase<T, 3, 2>({a, b, c, d, e, f}) {}
+    explicit mat3x2(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 3, 2>(mat) {}
 };
-template <typename T> class mat3 : public MatrixBase<T, 3, 3> {
+template <typename T> class mat3 : public Matrix::MatrixBase<T, 3, 3> {
   public:
-    mat3() : MatrixBase<T, 3, 3>() {}
-    mat3(const T *array) : MatrixBase<T, 3, 3>(array, this->GetSize()) {}
-    mat3(const MatrixBase<T, 3, 3> &mat) : MatrixBase<T, 3, 3>(mat) {}
-    mat3(const mat3 &mat) : MatrixBase<T, 3, 3>(mat) {}
-    mat3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3)
-        : MatrixBase<T, 3, 3>({v1, v2, v3}) {}
-    mat3(const T &a, const T &b, const T &c, const T &d, const T &e, const T &f,
-         const T &g, const T &h, const T &i)
-        : MatrixBase<T, 3, 3>({a, b, c, d, e, f, g, h, i}) {}
+    mat3() : Matrix::MatrixBase<T, 3, 3>() {}
+    explicit mat3(const T *array)
+        : Matrix::MatrixBase<T, 3, 3>(array, this->GetSize()) {}
+    mat3(const mat3 &mat)
+        : Matrix::MatrixBase<T, 3, 3>((const T *)mat, this->GetSize()) {}
+    explicit mat3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3)
+        : Matrix::MatrixBase<T, 3, 3>({v1, v2, v3}) {}
+    explicit mat3(const T &a, const T &b, const T &c, const T &d, const T &e,
+                  const T &f, const T &g, const T &h, const T &i)
+        : Matrix::MatrixBase<T, 3, 3>({a, b, c, d, e, f, g, h, i}) {}
+    explicit mat3(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 3, 3>(mat) {}
 };
-template <typename T> class mat3x4 : public MatrixBase<T, 3, 4> {
+template <typename T> class mat3x4 : public Matrix::MatrixBase<T, 3, 4> {
   public:
-    mat3x4() : MatrixBase<T, 3, 4>() {}
-    mat3x4(const T *array) : MatrixBase<T, 3, 4>(array, this->GetSize()) {}
-    mat3x4(const MatrixBase<T, 3, 4> &mat) : MatrixBase<T, 3, 4>(mat) {}
-    mat3x4(const mat3x4 &mat) : MatrixBase<T, 3, 4>(mat) {}
-    mat3x4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3)
-        : MatrixBase<T, 3, 4>({v1, v2, v3}) {}
-    mat3x4(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f, const T &g, const T &h, const T &i, const T &j,
-           const T &k, const T &l)
-        : MatrixBase<T, 3, 4>({a, b, c, d, e, f, g, h, i, j, k, l}) {}
+    mat3x4() : Matrix::MatrixBase<T, 3, 4>() {}
+    explicit mat3x4(const T *array)
+        : Matrix::MatrixBase<T, 3, 4>(array, this->GetSize()) {}
+    mat3x4(const mat3x4 &mat)
+        : Matrix::MatrixBase<T, 3, 4>((const T *)mat, this->GetSize()) {}
+    explicit mat3x4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3)
+        : Matrix::MatrixBase<T, 3, 4>({v1, v2, v3}) {}
+    explicit mat3x4(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f, const T &g, const T &h, const T &i, const T &j,
+                    const T &k, const T &l)
+        : Matrix::MatrixBase<T, 3, 4>({a, b, c, d, e, f, g, h, i, j, k, l}) {}
+    explicit mat3x4(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 3, 4>(mat) {}
 };
-template <typename T> class mat4x2 : public MatrixBase<T, 4, 2> {
+template <typename T> class mat4x2 : public Matrix::MatrixBase<T, 4, 2> {
   public:
-    mat4x2() : MatrixBase<T, 4, 2>() {}
-    mat4x2(const T *array) : MatrixBase<T, 4, 2>(array, this->GetSize()) {}
-    mat4x2(const MatrixBase<T, 4, 2> &mat) : MatrixBase<T, 4, 2>(mat) {}
-    mat4x2(const mat4x2 &mat) : MatrixBase<T, 4, 2>(mat) {}
-    mat4x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3,
-           const vec2<T> &v4)
-        : MatrixBase<T, 4, 2>({v1, v2, v3, v4}) {}
-    mat4x2(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f, const T &g, const T &h)
-        : MatrixBase<T, 4, 2>({a, b, c, d, e, f, g, h}) {}
+    mat4x2() : Matrix::MatrixBase<T, 4, 2>() {}
+    explicit mat4x2(const T *array)
+        : Matrix::MatrixBase<T, 4, 2>(array, this->GetSize()) {}
+    mat4x2(const mat4x2 &mat)
+        : Matrix::MatrixBase<T, 4, 2>((const T *)mat, this->GetSize()) {}
+    explicit mat4x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3,
+                    const vec2<T> &v4)
+        : Matrix::MatrixBase<T, 4, 2>({v1, v2, v3, v4}) {}
+    explicit mat4x2(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f, const T &g, const T &h)
+        : Matrix::MatrixBase<T, 4, 2>({a, b, c, d, e, f, g, h}) {}
+    explicit mat4x2(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 4, 2>(mat) {}
 };
-template <typename T> class mat4x3 : public MatrixBase<T, 4, 3> {
+template <typename T> class mat4x3 : public Matrix::MatrixBase<T, 4, 3> {
   public:
-    mat4x3() : MatrixBase<T, 4, 3>() {}
-    mat4x3(const T *array) : MatrixBase<T, 4, 3>(array, this->GetSize()) {}
-    mat4x3(const MatrixBase<T, 4, 3> &mat) : MatrixBase<T, 4, 3>(mat) {}
-    mat4x3(const mat4x3 &mat) : MatrixBase<T, 4, 3>(mat) {}
-    mat4x3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3,
-           const vec3<T> &v4)
-        : MatrixBase<T, 4, 3>({v1, v2, v3, v4}) {}
-    mat4x3(const T &a, const T &b, const T &c, const T &d, const T &e,
-           const T &f, const T &g, const T &h, const T &i, const T &j,
-           const T &k, const T &l)
-        : MatrixBase<T, 4, 3>({a, b, c, d, e, f, g, h, i, j, k, l}) {}
+    mat4x3() : Matrix::MatrixBase<T, 4, 3>() {}
+    explicit mat4x3(const T *array)
+        : Matrix::MatrixBase<T, 4, 3>(array, this->GetSize()) {}
+    mat4x3(const mat4x3 &mat)
+        : Matrix::MatrixBase<T, 4, 3>((const T *)mat, this->GetSize()) {}
+    explicit mat4x3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3,
+                    const vec3<T> &v4)
+        : Matrix::MatrixBase<T, 4, 3>({v1, v2, v3, v4}) {}
+    explicit mat4x3(const T &a, const T &b, const T &c, const T &d, const T &e,
+                    const T &f, const T &g, const T &h, const T &i, const T &j,
+                    const T &k, const T &l)
+        : Matrix::MatrixBase<T, 4, 3>({a, b, c, d, e, f, g, h, i, j, k, l}) {}
+    explicit mat4x3(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 4, 3>(mat) {}
 };
-template <typename T> class mat4 : public MatrixBase<T, 4, 4> {
+template <typename T> class mat4 : public Matrix::MatrixBase<T, 4, 4> {
   public:
-    mat4() : MatrixBase<T, 4, 4>() {}
-    mat4(const T *array) : MatrixBase<T, 4, 4>(array, this->GetSize()) {}
-    mat4(const MatrixBase<T, 4, 4> &mat) : MatrixBase<T, 4, 4>(mat) {}
-    mat4(const mat4 &mat) : MatrixBase<T, 4, 4>(mat) {}
-    mat4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3,
-         const vec4<T> &v4)
-        : MatrixBase<T, 4, 4>({v1, v2, v3, v4}) {}
-    mat4(const T &a, const T &b, const T &c, const T &d, const T &e, const T &f,
-         const T &g, const T &h, const T &i, const T &j, const T &k, const T &l,
-         const T &m, const T &n, const T &o, const T &p)
-        : MatrixBase<T, 4, 4>(
+    mat4() : Matrix::MatrixBase<T, 4, 4>() {}
+    explicit mat4(const T *array)
+        : Matrix::MatrixBase<T, 4, 4>(array, this->GetSize()) {}
+    mat4(const mat4 &mat)
+        : Matrix::MatrixBase<T, 4, 4>((const T *)mat, this->GetSize()) {}
+    explicit mat4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3,
+                  const vec4<T> &v4)
+        : Matrix::MatrixBase<T, 4, 4>({v1, v2, v3, v4}) {}
+    explicit mat4(const T &a, const T &b, const T &c, const T &d, const T &e,
+                  const T &f, const T &g, const T &h, const T &i, const T &j,
+                  const T &k, const T &l, const T &m, const T &n, const T &o,
+                  const T &p)
+        : Matrix::MatrixBase<T, 4, 4>(
               {a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}) {}
+    explicit mat4(const std::vector<std::vector<T>> &mat)
+        : Matrix::MatrixBase<T, 4, 4>(mat) {}
 };
 } // namespace GeoMath
+
+template <typename T, size_t Row, size_t Column>
+std::ostream &
+operator<<(std::ostream &stream,
+           const GeoMath::Matrix::MatrixBase<T, Row, Column> &mat) {
+    stream << "( ";
+    for (int i = 0; i < Row - 1; i++) {
+        stream << mat[i] << std::endl;
+        stream << "  ";
+    }
+    stream << mat[Row - 1] << " )";
+    return stream;
+}

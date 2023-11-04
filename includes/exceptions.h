@@ -3,7 +3,7 @@
 #include <string>
 
 #ifdef IGNORE_MATH_EXCEPTIONS
-#define _MATH_THROW(x)
+#define _MATH_THROW(x) std::cerr << x.what() << std::endl;
 #else
 #define _MATH_THROW(x) throw x
 #endif // IGNORE_MATH_EXCEPTIONS
