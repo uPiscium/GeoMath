@@ -172,14 +172,24 @@ template <typename T, size_t Comp> class VectorBase {
      */
     VectorBase GetNormalized() const {
         VectorBase copy = this->GetCopy();
-        copy /= this->GetLength();
+        T length = copy.GetLength();
+        if (length == 0) {
+            _MATH_THROW(ZeroDivisionError("Length of the vector is zero."));
+        }
+        copy /= length;
         return copy;
     }
 
     /*
      * Normalize the vector.
      */
-    void Normalize() { *this /= this->GetLength(); }
+    void Normalize() {
+        T length = this->GetLength();
+        if (length == 0) {
+            _MATH_THROW(ZeroDivisionError("Length of the vector is zero."));
+        }
+        *this /= length;
+    }
 };
 } // namespace Vector
 
@@ -301,7 +311,7 @@ Vector::VectorBase<T, Comp> operator/(const T &num,
  * @return : Dot product of two vectors.
  */
 template <typename T, size_t Comp>
-T dot(const Vector::VectorBase<T, Comp> &v1,
+T Dot(const Vector::VectorBase<T, Comp> &v1,
       const Vector::VectorBase<T, Comp> &v2) {
     T result = 0;
     for (int i = 0; i < Comp; i++) {
@@ -364,7 +374,7 @@ template <typename T> class vec4 : public Vector::VectorBase<T, 4> {
  * @param v2 : Vector 2.
  * @return : Cross product of two vectors.
  */
-template <typename T> vec3<T> cross(const vec2<T> &v1, const vec2<T> &v2) {
+template <typename T> vec3<T> Cross(const vec2<T> &v1, const vec2<T> &v2) {
     vec3<T> result;
     result[2] = v1[0] * v2[1] - v1[1] * v2[0];
     return result;
@@ -375,7 +385,7 @@ template <typename T> vec3<T> cross(const vec2<T> &v1, const vec2<T> &v2) {
  * @param v2 : Vector 2.
  * @return : Cross product of two vectors.
  */
-template <typename T> vec3<T> cross(const vec3<T> &v1, const vec3<T> &v2) {
+template <typename T> vec3<T> Cross(const vec3<T> &v1, const vec3<T> &v2) {
     vec3<T> result;
     result[0] = v1[1] * v2[2] - v1[2] * v2[1];
     result[1] = v1[2] * v2[0] - v1[0] * v2[2];
