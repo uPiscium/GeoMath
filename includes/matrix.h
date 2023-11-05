@@ -187,6 +187,7 @@ template <typename T, size_t Row, size_t Column> class MatrixBase {
         MatrixBase<T, Row - 1, Column - 1> result;
         int p = 0, q = 0;
         for (int l = 0; l < Row; l++) {
+            q = 0;
             if (l == i) {
                 continue;
             }
@@ -394,20 +395,8 @@ Dot(const Vector::VectorBase<T, Row> &vec,
     return result;
 }
 
-/*
- * Get the determinant of a matrix.
- * @param mat : Matrix.
- * @return T
- */
-template <typename T, size_t Size>
-T Determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
-    T det = 0;
-    for (int i = 0; i < Size; i++) {
-        Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
-            mat.GetCofactor(i, 0);
-        det += mat[i][0] * determinant(cofactor);
-    }
-    return det;
+template <typename T> T Determinant(const Matrix::MatrixBase<T, 1, 1> &mat) {
+    return mat[0][0];
 }
 template <typename T> T Determinant(const Matrix::MatrixBase<T, 2, 2> &mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
@@ -422,6 +411,21 @@ template <typename T> T Determinant(const Matrix::MatrixBase<T, 3, 3> &mat) {
     T r3 = mat[0][2] * mat[1][1] * mat[2][0];
     T right = r1 + r2 + r3;
     return left - right;
+}
+/*
+ * Get the determinant of a matrix.
+ * @param mat : Matrix.
+ * @return T
+ */
+template <typename T, size_t Size>
+T Determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
+    T det = 0;
+    for (int i = 0; i < Size; i++) {
+        Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
+            mat.GetCofactor(i, 0);
+        det += mat[i][0] * Determinant(cofactor);
+    }
+    return det;
 }
 
 /*
@@ -443,11 +447,11 @@ Inverse(const Matrix::MatrixBase<T, Size, Size> &mat) {
         for (int j = 0; j < Size; j++) {
             Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
                 mat.GetCofactor(i, j);
-            T c = (i + j) % 2 == 0 ? 1 : -1;
+            T c = static_cast<T>((i + j) % 2 == 0 ? 1 : -1);
             result[i][j] = c * Determinant(cofactor) / det;
         }
     }
-    return result;
+    return result.GetTransposed();
 }
 
 template <typename T> class mat2;
