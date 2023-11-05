@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 3.1)
-project(
-    GeoMath
-    VERSION 1.0.0
-    DESCRIPTION "Graphical math calculation library."
-    LANGUAGES CXX
-)
