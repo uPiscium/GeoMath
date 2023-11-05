@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <vector>
 
@@ -350,13 +351,13 @@ operator/(const T &num, const Matrix::MatrixBase<T, Row, Column> &mat) {
  */
 template <typename T, size_t Row, size_t Share, size_t Column>
 Matrix::MatrixBase<T, Row, Column>
-dot(const Matrix::MatrixBase<T, Row, Share> &m1,
+Dot(const Matrix::MatrixBase<T, Row, Share> &m1,
     const Matrix::MatrixBase<T, Share, Column> &m2) {
     Matrix::MatrixBase<T, Column, Share> tm2 = m2.GetTransposed();
     Matrix::MatrixBase<T, Row, Column> result;
     for (int i = 0; i < Row; i++) {
         for (int j = 0; j < Column; j++) {
-            result[i][j] = dot(m1[i], tm2[j]);
+            result[i][j] = Dot(m1[i], tm2[j]);
         }
     }
     return result;
@@ -368,11 +369,11 @@ dot(const Matrix::MatrixBase<T, Row, Share> &m1,
  * @return VectorBase<T, Row>
  */
 template <typename T, size_t Row, size_t Column>
-Vector::VectorBase<T, Row> dot(const Matrix::MatrixBase<T, Row, Column> &mat,
+Vector::VectorBase<T, Row> Dot(const Matrix::MatrixBase<T, Row, Column> &mat,
                                const Vector::VectorBase<T, Column> &vec) {
     Vector::VectorBase<T, Row> result;
     for (int i = 0; i < Row; i++) {
-        result[i] = dot(mat[i], vec);
+        result[i] = Dot(mat[i], vec);
     }
     return result;
 }
@@ -384,11 +385,11 @@ Vector::VectorBase<T, Row> dot(const Matrix::MatrixBase<T, Row, Column> &mat,
  */
 template <typename T, size_t Row, size_t Column>
 Vector::VectorBase<T, Column>
-dot(const Vector::VectorBase<T, Row> &vec,
+Dot(const Vector::VectorBase<T, Row> &vec,
     const Matrix::MatrixBase<T, Row, Column> &mat) {
     Vector::VectorBase<T, Column> result;
     for (int i = 0; i < Row; i++) {
-        result[i] = dot(vec, mat[i]);
+        result[i] = Dot(vec, mat[i]);
     }
     return result;
 }
@@ -399,7 +400,7 @@ dot(const Vector::VectorBase<T, Row> &vec,
  * @return T
  */
 template <typename T, size_t Size>
-T determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
+T Determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
     T det = 0;
     for (int i = 0; i < Size; i++) {
         Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
@@ -408,10 +409,10 @@ T determinant(const Matrix::MatrixBase<T, Size, Size> &mat) {
     }
     return det;
 }
-template <typename T> T determinant(const Matrix::MatrixBase<T, 2, 2> &mat) {
+template <typename T> T Determinant(const Matrix::MatrixBase<T, 2, 2> &mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
-template <typename T> T determinant(const Matrix::MatrixBase<T, 3, 3> &mat) {
+template <typename T> T Determinant(const Matrix::MatrixBase<T, 3, 3> &mat) {
     T l1 = mat[0][0] * mat[1][1] * mat[2][2];
     T l2 = mat[0][1] * mat[1][2] * mat[2][0];
     T l3 = mat[0][2] * mat[1][0] * mat[2][1];
@@ -421,6 +422,32 @@ template <typename T> T determinant(const Matrix::MatrixBase<T, 3, 3> &mat) {
     T r3 = mat[0][2] * mat[1][1] * mat[2][0];
     T right = r1 + r2 + r3;
     return left - right;
+}
+
+/*
+ * Get the inverse of a matrix.
+ * @param mat : Matrix.
+ * @return MatrixBase<T, Row, Column>
+ */
+template <typename T, size_t Size>
+Matrix::MatrixBase<T, Size, Size>
+Inverse(const Matrix::MatrixBase<T, Size, Size> &mat) {
+    Matrix::MatrixBase<T, Size, Size> result;
+    T det = Determinant(mat);
+    if (det == 0) {
+        _MATH_THROW(
+            ZeroDivisionError("The determinant of the matrix is zero."));
+    }
+
+    for (int i = 0; i < Size; i++) {
+        for (int j = 0; j < Size; j++) {
+            Matrix::MatrixBase<T, Size - 1, Size - 1> &cofactor =
+                mat.GetCofactor(i, j);
+            T c = (i + j) % 2 == 0 ? 1 : -1;
+            result[i][j] = c * Determinant(cofactor) / det;
+        }
+    }
+    return result;
 }
 
 template <typename T> class mat2;

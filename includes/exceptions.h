@@ -22,4 +22,9 @@ struct IndexOutOfRange : MathException {
   public:
     IndexOutOfRange(const std::string &msg) : MathException(msg) { ; }
 };
+
+struct ZeroDivisionError : MathException {
+  public:
+    ZeroDivisionError(const std::string &msg) : MathException(msg) { ; }
+};
 } // namespace GeoMath
