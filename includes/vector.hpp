@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "exceptions.h"
+#include "exceptions.hpp"
 
 namespace GeoMath {
 namespace Vector {
