@@ -4,8 +4,8 @@
 #include <ostream>
 #include <vector>
 
-#include "exceptions.h"
-#include "vector.h"
+#include "exceptions.hpp"
+#include "vector.hpp"
 
 namespace GeoMath {
 namespace Matrix {
