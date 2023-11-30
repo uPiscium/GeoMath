@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "vector.h"
+#include "vector.hpp"
 
 namespace GeoMath {
 template <typename T> class Quaternion {
