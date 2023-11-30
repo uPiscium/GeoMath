@@ -471,6 +471,8 @@ template <typename T> class mat2 : public Matrix::MatrixBase<T, 2, 2> {
         : Matrix::MatrixBase<T, 2, 2>(array, this->GetSize()) {}
     mat2(const mat2 &mat)
         : Matrix::MatrixBase<T, 2, 2>((const T *)mat, this->GetSize()) {}
+    mat2(const Matrix::MatrixBase<T, 2, 2> &mat)
+        : Matrix::MatrixBase<T, 2, 2>(mat) {}
     explicit mat2(const vec2<T> &v1, const vec2<T> &v2)
         : Matrix::MatrixBase<T, 2, 2>({v1, v2}) {}
     explicit mat2(const T &a, const T &b, const T &c, const T &d)
@@ -484,6 +486,8 @@ template <typename T> class mat2x3 : public Matrix::MatrixBase<T, 2, 3> {
     explicit mat2x3(const T *array)
         : Matrix::MatrixBase<T, 2, 3>(array, this->GetSize()) {}
     mat2x3(const mat2x3 &mat)
+        : Matrix::MatrixBase<T, 2, 3>((const T *)mat, this->GetSize()) {}
+    mat2x3(const Matrix::MatrixBase<T, 2, 3> &mat)
         : Matrix::MatrixBase<T, 2, 3>((const T *)mat, this->GetSize()) {}
     explicit mat2x3(const vec3<T> &v1, const vec3<T> &v2)
         : Matrix::MatrixBase<T, 2, 3>({v1, v2}) {}
@@ -500,6 +504,8 @@ template <typename T> class mat2x4 : public Matrix::MatrixBase<T, 2, 4> {
         : Matrix::MatrixBase<T, 2, 4>(array, this->GetSize()) {}
     mat2x4(const mat2x4 &mat)
         : Matrix::MatrixBase<T, 2, 4>((const T *)mat, this->GetSize()) {}
+    mat2x4(const Matrix::MatrixBase<T, 2, 4> &mat)
+        : Matrix::MatrixBase<T, 2, 4>((const T *)mat, this->GetSize()) {}
     explicit mat2x4(const vec4<T> &v1, const vec4<T> &v2)
         : Matrix::MatrixBase<T, 2, 4>({v1, v2}) {}
     explicit mat2x4(const T &a, const T &b, const T &c, const T &d, const T &e,
@@ -514,6 +520,8 @@ template <typename T> class mat3x2 : public Matrix::MatrixBase<T, 3, 2> {
     explicit mat3x2(const T *array)
         : Matrix::MatrixBase<T, 3, 2>(array, this->GetSize()) {}
     mat3x2(const mat3x2 &mat)
+        : Matrix::MatrixBase<T, 3, 2>((const T *)mat, this->GetSize()) {}
+    mat3x2(const Matrix::MatrixBase<T, 3, 2> &mat)
         : Matrix::MatrixBase<T, 3, 2>((const T *)mat, this->GetSize()) {}
     explicit mat3x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3)
         : Matrix::MatrixBase<T, 3, 2>({v1, v2, v3}) {}
@@ -530,6 +538,8 @@ template <typename T> class mat3 : public Matrix::MatrixBase<T, 3, 3> {
         : Matrix::MatrixBase<T, 3, 3>(array, this->GetSize()) {}
     mat3(const mat3 &mat)
         : Matrix::MatrixBase<T, 3, 3>((const T *)mat, this->GetSize()) {}
+    mat3(const Matrix::MatrixBase<T, 3, 3> &mat)
+        : Matrix::MatrixBase<T, 3, 3>((const T *)mat, this->GetSize()) {}
     explicit mat3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3)
         : Matrix::MatrixBase<T, 3, 3>({v1, v2, v3}) {}
     explicit mat3(const T &a, const T &b, const T &c, const T &d, const T &e,
@@ -544,6 +554,8 @@ template <typename T> class mat3x4 : public Matrix::MatrixBase<T, 3, 4> {
     explicit mat3x4(const T *array)
         : Matrix::MatrixBase<T, 3, 4>(array, this->GetSize()) {}
     mat3x4(const mat3x4 &mat)
+        : Matrix::MatrixBase<T, 3, 4>((const T *)mat, this->GetSize()) {}
+    mat3x4(const Matrix::MatrixBase<T, 3, 4> &mat)
         : Matrix::MatrixBase<T, 3, 4>((const T *)mat, this->GetSize()) {}
     explicit mat3x4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3)
         : Matrix::MatrixBase<T, 3, 4>({v1, v2, v3}) {}
@@ -561,6 +573,8 @@ template <typename T> class mat4x2 : public Matrix::MatrixBase<T, 4, 2> {
         : Matrix::MatrixBase<T, 4, 2>(array, this->GetSize()) {}
     mat4x2(const mat4x2 &mat)
         : Matrix::MatrixBase<T, 4, 2>((const T *)mat, this->GetSize()) {}
+    mat4x2(const Matrix::MatrixBase<T, 4, 2> &mat)
+        : Matrix::MatrixBase<T, 4, 2>((const T *)mat, this->GetSize()) {}
     explicit mat4x2(const vec2<T> &v1, const vec2<T> &v2, const vec2<T> &v3,
                     const vec2<T> &v4)
         : Matrix::MatrixBase<T, 4, 2>({v1, v2, v3, v4}) {}
@@ -576,6 +590,8 @@ template <typename T> class mat4x3 : public Matrix::MatrixBase<T, 4, 3> {
     explicit mat4x3(const T *array)
         : Matrix::MatrixBase<T, 4, 3>(array, this->GetSize()) {}
     mat4x3(const mat4x3 &mat)
+        : Matrix::MatrixBase<T, 4, 3>((const T *)mat, this->GetSize()) {}
+    mat4x3(const Matrix::MatrixBase<T, 4, 3> &mat)
         : Matrix::MatrixBase<T, 4, 3>((const T *)mat, this->GetSize()) {}
     explicit mat4x3(const vec3<T> &v1, const vec3<T> &v2, const vec3<T> &v3,
                     const vec3<T> &v4)
@@ -593,6 +609,8 @@ template <typename T> class mat4 : public Matrix::MatrixBase<T, 4, 4> {
     explicit mat4(const T *array)
         : Matrix::MatrixBase<T, 4, 4>(array, this->GetSize()) {}
     mat4(const mat4 &mat)
+        : Matrix::MatrixBase<T, 4, 4>((const T *)mat, this->GetSize()) {}
+    mat4(const Matrix::MatrixBase<T, 4, 4> &mat)
         : Matrix::MatrixBase<T, 4, 4>((const T *)mat, this->GetSize()) {}
     explicit mat4(const vec4<T> &v1, const vec4<T> &v2, const vec4<T> &v3,
                   const vec4<T> &v4)

@@ -329,6 +329,8 @@ template <typename T> class vec2 : public Vector::VectorBase<T, 2> {
     vec2() : Vector::VectorBase<T, 2>() {}
     vec2(const vec2 &data)
         : Vector::VectorBase<T, 2>((const T *)data.mArray, this->GetSize()) {}
+    vec2(const Vector::VectorBase<T, 2> &data)
+        : Vector::VectorBase<T, 2>((const T *)data, this->GetSize()) {}
     explicit vec2(const std::vector<T> &data)
         : Vector::VectorBase<T, 2>(data) {}
     vec2(const T &c1, const T &c2) : Vector::VectorBase<T, 2>({c1, c2}) {}
@@ -343,6 +345,8 @@ template <typename T> class vec3 : public Vector::VectorBase<T, 3> {
     vec3() : Vector::VectorBase<T, 3>() { ; }
     vec3(const vec3 &data)
         : Vector::VectorBase<T, 3>((const T *)data.mArray, this->GetSize()) {}
+    vec3(const Vector::VectorBase<T, 3> &data)
+        : Vector::VectorBase<T, 3>((const T *)data, this->GetSize()) {}
     explicit vec3(const std::vector<T> &data)
         : Vector::VectorBase<T, 3>(data) {}
     vec3(const T &c1, const T &c2, const T &c3)
@@ -358,6 +362,8 @@ template <typename T> class vec4 : public Vector::VectorBase<T, 4> {
     vec4() : Vector::VectorBase<T, 4>() {}
     vec4(const vec4 &data)
         : Vector::VectorBase<T, 4>((const T *)data.mArray, this->GetSize()) {}
+    vec4(const Vector::VectorBase<T, 4> &data)
+        : Vector::VectorBase<T, 4>((const T *)data, this->GetSize()) {}
     explicit vec4(const std::vector<T> &data)
         : Vector::VectorBase<T, 4>(data) {}
     vec4(const T &c1, const T &c2, const T &c3, const T &c4)
