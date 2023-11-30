@@ -2,9 +2,9 @@
 #include <cmath>
 #include <iostream>
 
-#include "matrix.h"
-#include "quaternion.h"
-#include "vector.h"
+#include "matrix.hpp"
+#include "quaternion.hpp"
+#include "vector.hpp"
 
 #define PI 3.14159265358979
 #define DEG PI / 180
